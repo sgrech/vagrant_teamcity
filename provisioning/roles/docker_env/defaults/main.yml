@@ -1,0 +1,4 @@
+---
+agent_node_ver: "14.14.0"
+local_registry_port: "5000"
+local_registy_url: "localhost:{{ local_registry_port }}"

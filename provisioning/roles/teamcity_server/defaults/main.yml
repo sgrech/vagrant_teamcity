@@ -1,0 +1,8 @@
+---
+teamcity_version: "2020.1.5"
+server_archive: "TeamCity-{{ teamcity_version }}.tar.gz"
+server_archive_path: "{{ archive_path }}/{{ server_archive }}"
+server_archive_host_path: "{{ archive_host_path }}/{{ server_archive }}"
+service_path: "/var/www"
+teamcity_user: teamcity
+teamcity_group: teamcity

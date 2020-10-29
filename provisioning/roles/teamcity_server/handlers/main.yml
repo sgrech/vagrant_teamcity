@@ -1,0 +1,4 @@
+- name: Restart teamcity
+  service:
+    name: teamcity-server
+    state: restarted

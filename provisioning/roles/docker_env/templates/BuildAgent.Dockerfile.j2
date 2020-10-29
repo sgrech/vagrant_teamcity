@@ -1,0 +1,10 @@
+FROM node:{{ agent_node_ver }}
+ARG USER=teamcity
+ARG UID=1001
+ARG GID=1001
+ARG PW=teamcity
+RUN apt-get update && apt-get -y install sudo
+RUN useradd -m ${USER} --uid=${UID} && echo "${USER}:${PW}" | chpasswd && adduser ${USER} sudo
+RUN echo "%${USER} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+USER ${USER}
+RUN ["sudo", "npm", "install", "lerna", "-g"]

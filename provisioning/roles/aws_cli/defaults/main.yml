@@ -1,0 +1,16 @@
+---
+aws_configs:
+  - {
+      aws_cli_user: "vagrant",
+      aws_cli_group: "vagrant",
+      aws_home_path: "/home/vagrant/.aws",
+    }
+  - {
+      aws_cli_user: "teamcity",
+      aws_cli_group: "teamcity",
+      aws_home_path: "/home/teamcity/.aws",
+    }
+aws_cli_archive: "awscliv2.zip"
+aws_cli_archive_path: "{{ archive_path }}/{{ aws_cli_archive }}"
+aws_cli_archive_host_path: "{{ archive_host_path }}/{{ aws_cli_archive }}"
+aws_cli_installer_path: "{{ archive_path }}/aws/install"

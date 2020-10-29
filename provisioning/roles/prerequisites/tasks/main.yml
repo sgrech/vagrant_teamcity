@@ -1,0 +1,41 @@
+---
+- name: Create Software archive path
+  file:
+    path: "{{ archive_path }}"
+    state: directory
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install openjdk headless
+  apt:
+    state: present
+    name:
+      - openjdk-11-jre-headless
+
+- name: Install ansible docker prequisite packages
+  apt:
+    name:
+      - python3-docker
+
+- name: Add unzip util
+  apt:
+    name:
+      - unzip
+
+- name: Create teamcity group
+  group:
+    name: "{{ teamcity_group }}"
+    state: present
+
+- name: Add teamcity entry to hosts file
+  lineinfile:
+    path: /etc/hosts
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - {
+        regexp: '^127\.0\.0\.1 teamcity.local',
+        line: "127.0.0.1 teamcity.local",
+      }

@@ -1,0 +1,47 @@
+---
+- hosts: all
+  become: yes
+
+  vars:
+    teamcity_user: teamcity
+    teamcity_group: teamcity
+    archive_path: "/home/vagrant/Software"
+    archive_host_path: "/home/shaneg/Software"
+    agent_info_list:
+      - { index: 1, user: teamcity_agent_1, service: teamcity-agent-1 }
+      - { index: 2, user: teamcity_agent_2, service: teamcity-agent-2 }
+      - { index: 3, user: teamcity_agent_3, service: teamcity-agent-3 }
+
+  tasks:
+    - import_role:
+        name: prerequisites
+      tags: prerequisites
+
+    - import_role:
+        name: sgrech.role_docker
+
+    - import_role:
+        name: teamcity_server
+
+    # TODO: set loop with dict Iteration, Username
+    - include_role:
+        name: teamcity_build_agent
+      loop: "{{ agent_info_list }}"
+      loop_control:
+        loop_var: agent_info
+
+    - import_role:
+        name: docker_env
+      tags: docker_env
+
+    - import_role:
+        name: aws_cli
+      tags: aws_cli
+
+    - import_role:
+        name: helm
+      tags: helm
+
+    - import_role:
+        name: nginx
+      tags: nginx

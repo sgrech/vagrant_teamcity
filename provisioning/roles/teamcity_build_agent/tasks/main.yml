@@ -1,0 +1,103 @@
+- name: Debug variables
+  debug:
+    msg: "{{ agent_info.user }}"
+
+- name: Check teamcity agent install archive exists locally
+  local_action: "stat path={{ agent_archive_host_path }}"
+  register: local_archive
+  become: false
+
+- name: Does archive exist locally
+  debug:
+    msg: "{{ agent_archive_host_path }}: {{ local_archive.stat.exists }}"
+
+- name: Copy teamcity agent archive
+  synchronize:
+    src: "{{ agent_archive_host_path }}"
+    dest: "{{ agent_archive_path }}"
+  when: local_archive.stat.exists
+
+- name: Download teamcity agent archive
+  get_url:
+    url: "{{ agent_download_url }}"
+    dest: "{{ agent_archive_path }}"
+  when: not local_archive.stat.exists
+
+- name: Add teamcity agent user
+  user:
+    name: "{{ agent_info.user }}"
+    group: "{{ teamcity_group }}"
+
+- name: Add teamcity agent user to docker group
+  user:
+    name: "{{ agent_info.user }}"
+    group: docker
+
+- name: Allow agent user group to use sudo on docker
+  lineinfile:
+    dest: /etc/sudoers
+    state: present
+    regexp: "^{{ agent_info.user }}"
+    line: "{{ agent_info.user}} ALL=(ALL) NOPASSWD:SETENV:/usr/bin/docker"
+
+- name: Add service path
+  file:
+    path: "{{ service_path }}"
+    state: directory
+    owner: "{{ agent_info.user }}"
+    group: "{{ teamcity_group }}"
+
+- name: Unpack teamcity agent
+  unarchive:
+    remote_src: yes
+    src: "{{ agent_archive_path }}"
+    dest: "{{ service_path }}"
+    owner: "{{ agent_info.user }}"
+    group: "{{ teamcity_group }}"
+
+- name: Add logs directory
+  file:
+    path: "{{ service_path }}/logs"
+    owner: "{{ agent_info.user }}"
+    group: "{{ teamcity_group }}"
+    state: directory
+
+- name: Attempt to change ownership on directory
+  file:
+    path: "{{ service_path }}"
+    state: directory
+    recurse: yes
+    owner: "{{ agent_info.user }}"
+    group: "{{ teamcity_group }}"
+
+- name: Add buildAgent properties file
+  copy:
+    remote_src: yes
+    src: "{{ service_path }}/conf/buildAgent.dist.properties"
+    dest: "{{ service_path }}/conf/buildAgent.properties"
+    owner: "{{ agent_info.user }}"
+    group: "{{ teamcity_group }}"
+
+- name: Add buildAgent configuration
+  lineinfile:
+    path: "{{ service_path }}/conf/buildAgent.properties"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: "^name=", line: "name=teamcity-agent-{{ agent_info.index }}" }
+    - { regexp: "^ownPort", line: "ownPort=909{{ agent_info.index }}" }
+    - {
+        regexp: "^teamcity.docker.use.sudo",
+        line: "teamcity.docker.use.sudo=true",
+      }
+
+- name: Create service definition
+  template:
+    src: teamcity-build-agent.service.j2
+    dest: "/lib/systemd/system/{{ agent_info.service }}.service"
+
+- name: Enable teamcity agent service
+  service:
+    name: "{{ agent_info.service }}"
+    state: started
+    enabled: yes

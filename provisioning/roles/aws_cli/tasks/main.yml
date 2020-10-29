@@ -1,0 +1,65 @@
+---
+- name: Print env vars archive exist locally
+  debug:
+    msg: '{{ lookup("env", "AWS_ACCESS_KEY_ID") }}'
+
+- name: Check aws-cli install archive exists locally
+  local_action: "stat path={{ aws_cli_archive_host_path }}"
+  register: local_archive
+  become: false
+
+- name: Does archive exist locally
+  debug:
+    msg: "{{ aws_cli_archive_host_path }}: {{ local_archive.stat.exists }}"
+
+- name: Copy aws-cli archive
+  synchronize:
+    src: "{{ aws_cli_archive_host_path }}"
+    dest: "{{ aws_cli_archive_path }}"
+  when: local_archive.stat.exists
+
+- name: Download aws-cli archive
+  get_url:
+    url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+    dest: "{{ aws_cli_archive_path }}"
+  when: not local_archive.stat.exists
+
+- name: Unpack aws-cli
+  unarchive:
+    remote_src: yes
+    src: "{{ aws_cli_archive_path }}"
+    dest: "{{ archive_path }}"
+
+- name: Install aws-cli
+  command:
+    cmd: "sh {{ aws_cli_installer_path }}"
+    creates: "/usr/local/bin/aws"
+  register: install_result
+
+- name: Install output
+  debug:
+    msg: "{{ install_result }}"
+
+- name: Create .aws in home directories
+  file:
+    path: "{{ item.aws_home_path }}"
+    owner: "{{ item.aws_cli_user }}"
+    group: "{{ item.aws_cli_group }}"
+    state: directory
+  loop: "{{ aws_configs }}"
+
+- name: Set credentials files
+  template:
+    src: credentials.j2
+    dest: "{{ item.aws_home_path }}/credentials"
+    owner: "{{ item.aws_cli_user }}"
+    group: "{{ item.aws_cli_group }}"
+  loop: "{{ aws_configs }}"
+
+- name: Set config files
+  template:
+    src: config.j2
+    dest: "{{ item.aws_home_path }}/config"
+    owner: "{{ item.aws_cli_user }}"
+    group: "{{ item.aws_cli_group }}"
+  loop: "{{ aws_configs }}"

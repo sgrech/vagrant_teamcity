@@ -1,0 +1,5 @@
+---
+- name: Restart teamcity agent
+  service:
+    name: "teamcity-agent-{{ agent_info.index }}"
+    state: restarted

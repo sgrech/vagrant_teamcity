@@ -1,0 +1,55 @@
+- name: Check teamcity install archive exists locally
+  local_action: "stat path={{ server_archive_host_path }}"
+  register: local_archive
+  become: false
+
+- name: Does archive exist locally
+  debug:
+    msg: "{{ server_archive_host_path }}: {{ local_archive.stat.exists }}"
+
+- name: Copy teamcity server archive
+  synchronize:
+    src: "{{ server_archive_host_path }}"
+    dest: "{{ server_archive_path }}"
+  when: local_archive.stat.exists
+
+- name: Download teamcity archive
+  get_url:
+    url: "https://download.jetbrains.com/teamcity/{{ server_archive }}"
+    dest: "{{ server_archive_path }}"
+  when: not local_archive.stat.exists
+
+- name: Add teamcity user
+  user:
+    name: "{{ teamcity_user }}"
+    group: "{{ teamcity_group }}"
+
+- name: Add service path
+  file:
+    path: "{{ service_path }}"
+    state: directory
+
+- name: Unpack teamcity
+  unarchive:
+    remote_src: yes
+    src: "{{ server_archive_path }}"
+    dest: "{{ service_path }}"
+    owner: "{{ teamcity_user }}"
+    group: "{{ teamcity_group }}"
+
+- name: Create service definition
+  template:
+    src: teamcity-server.service.j2
+    dest: /lib/systemd/system/teamcity-server.service
+
+- name: Enable teamcity service
+  service:
+    name: teamcity-server
+    state: started
+    enabled: yes
+
+- name: Add teamcity user to docker group
+  user:
+    name: "{{ teamcity_user }}"
+    group: docker
+  # notify: Restart teamcity

@@ -1,0 +1,7 @@
+---
+agent_archive: "buildAgentFull.zip"
+agent_archive_path: "{{ archive_path }}/{{ agent_archive }}"
+agent_archive_host_path: "{{ archive_host_path }}/{{ agent_archive }}"
+teamcity_server_url: "http://teamcity.local:8111"
+agent_download_url: "{{ teamcity_server_url }}/update/{{ agent_archive }}"
+service_path: "/opt/teamcity-agent-{{ agent_info.index }}"

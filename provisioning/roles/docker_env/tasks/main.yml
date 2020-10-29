@@ -1,0 +1,39 @@
+- name: Create private docker repo
+  docker_container:
+    name: local_registry
+    image: registry:2
+    ports:
+      - "{{ local_registry_port }}:{{ local_registry_port }}"
+    restart_policy: always
+
+- name: Push docker agent dockerfile
+  template:
+    src: BuildAgent.Dockerfile.j2
+    dest: /tmp/BuildAgent.Dockerfile
+
+- name: Get teamcity user info
+  getent:
+    database: passwd
+    key: "{{ teamcity_user }}"
+
+- name: Build agent docker image
+  docker_image:
+    name: "{{ local_registy_url }}/teamcity/build-agent"
+    build:
+      path: /tmp
+      dockerfile: BuildAgent.Dockerfile
+      pull: no
+      args:
+        USER: "{{ teamcity_user }}"
+        UID: "{{ getent_passwd.teamcity[1] }}"
+        GID: "{{ getent_passwd.teamcity[2] }}"
+    tag: v0.1
+    push: yes
+    source: build
+  tags: agent_container
+
+- name: Push local docker settings
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+  notify: Restart docker
