@@ -43,5 +43,9 @@
       tags: helm
 
     - import_role:
+        name: kubectl
+      tags: kubectl
+
+    - import_role:
         name: nginx
       tags: nginx

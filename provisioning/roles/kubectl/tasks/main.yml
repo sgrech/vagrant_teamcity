@@ -1,0 +1,30 @@
+---
+- name: Install prerequisite packages
+  apt:
+    state: present
+    name:
+      - apt-transport-https
+      - curl
+      - gnupg2
+
+- name: Import kubectl apt key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+- name: Add kubectl apt repo
+  apt_repository:
+    repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+    state: present
+    update_cache: yes
+
+- name: Install kubectl
+  apt:
+    name: kubectl
+
+- name: Create cubeconfig
+  command:
+    cmd: 'aws eks --region {{ lookup("env", "AWS_DEFAULT_REGION") }} update-kubeconfig --name {{ lookup("env", "K8S_CLUSTER_NAME") }}'
+    creates: "/home/vagrant/.kube/config"
+  become: true
+  become_user: vagrant
+  when: lookup("env", "K8S_CLUSTER_NAME") != ''

@@ -13,7 +13,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.provider "virtualbox" do |v|
     v.name = 'teamcity'
-    v.memory = 3072
+    v.memory = 4096
     v.cpus = 2
   end
 
@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.provision :ansible do |ansible|
     ansible.playbook = "provisioning/main.yml"
-    # ansible.tags = "aws_cli"
+    ansible.tags = "kubectl"
   end
 end
 
